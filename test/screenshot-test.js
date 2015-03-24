@@ -2,7 +2,6 @@ var require = patchRequire(require),
     fs = require( "fs" ),    
     basePath = fs.absolute( fs.workingDirectory ),
     testPath = basePath + "/test/html/",
-    Q = require( basePath + "/node_modules/q/q" ), // casper magix
     phantomcss = require( basePath + "/node_modules/phantomcss/phantomcss" ); // casper magix
 // if anyone knows how to fix this for casperjs, feel free to remove the hard coded lib path
 
