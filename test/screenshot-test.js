@@ -1,3 +1,5 @@
+"use strict";
+
 var require = patchRequire(require),
     fs = require( "fs" ),    
     basePath = fs.absolute( fs.workingDirectory ),
@@ -5,23 +7,17 @@ var require = patchRequire(require),
     phantomcss = require( basePath + "/node_modules/phantomcss/phantomcss" ); // casper magix
 // if anyone knows how to fix this for casperjs, feel free to remove the hard coded lib path
 
-function getChangedFiles( callback ) {
-    var spawn = require("child_process").spawn,
-        execFile = require("child_process").execFile,
-        child = spawn("git", ["log", "-1"]);
-
-    console.log("waiting for data on: git log -1");
-    child.stdout.on("data", function( data ) {
-        console.log("logged -------------- begin");
-        console.log(data);
-        console.log("logged -------------- end");
-        callback();
-    });
-}
+var ignored = {
+    // Don't remove "." and ".." as this will lead into an endless loop.
+    // Add other directories or files inside the html folder that you wish to get ignored
+        "." : true,
+        ".." : true
+    },
+    changedFiles = [];
 
 function screenshotAndCompare( relativePath ) {
 
-    casper.test.begin( "Testing" + relativePath, function() {
+    casper.test.begin("Testing" + relativePath, function() {
 
         console.log("Processing with path:", relativePath);
 
@@ -44,7 +40,7 @@ function screenshotAndCompare( relativePath ) {
         casper.then( compareScreenShots );
 
         casper.run( function() {
-            console.log(" Finished running tests for", relativePath);
+            console.log("Finished running tests for", relativePath);
             casper.test.done();
         });
 
@@ -53,7 +49,7 @@ function screenshotAndCompare( relativePath ) {
         }
 
         function screenShotBody() {
-            phantomcss.screenshot('body', relativePath ); // name of screenshot
+            phantomcss.screenshot("body", relativePath); // name of screenshot
         }
 
     });
@@ -61,7 +57,6 @@ function screenshotAndCompare( relativePath ) {
 
 
 function testRecursive( path ) {
-    path = path || "";
     var fileList = fs.list( testPath + path ),
         targetFile,
         targetPath,
@@ -70,10 +65,10 @@ function testRecursive( path ) {
     for( i =0; i < fileList.length; i++ ) {
         targetFile = fileList[i];
 
-        if ( targetFile != "." && targetFile != ".." ) {
+        if ( !ignored[targetFile] ) {
             targetPath = path + targetFile;
 
-            if( fs.isDirectory( testPath + targetPath ) ) {
+            if ( fs.isDirectory( testPath + targetPath ) ) {
                 testRecursive( targetPath + "/" );
             } else {
                 console.log( "Queued:", targetPath);
@@ -83,6 +78,35 @@ function testRecursive( path ) {
     }
 }
 
-getChangedFiles( testRecursive );
+function addToChangedFilesList( fileName ) {
+    if ( fileName.length > 2 ) {
+        ignored[(fileName.substring(1, fileName.length - 1))] = true;
+    }
+}
+
+function runEmptyCasperTest() {
+    casper.test.begin("Empty test that exists so that the build doesn't fail if no files are compared", function() {
+        casper.start().then( function() {
+            casper.test.assert(true,true);
+        }).run( function() {
+            test.done();
+        });
+    });
+}
+
+
+var spawn = require("child_process").spawn,
+    execFile = require("child_process").execFile,
+    child = spawn("git", ["log", "-1"]);
+
+child.stdout.on("data", function( data ) {
+
+    data.match( /\*[^\*]*\*/g ).map( addToChangedFilesList );
+    console.log("Files marked to have screenshots updated:", changedFiles);
+
+    testRecursive("");
+    runEmptyCasperTest();
+});
+
 
 
