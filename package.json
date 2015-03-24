@@ -1,0 +1,13 @@
+{
+    "name": "travis-screenshot-tester",
+    "version": "0.0.1",
+    "description": "A template to allow an easy setup of screenshot regression testing on travis",
+    "scripts" : {
+        "test" : "casperjs test test/screenshot-test.js" 
+    },
+    "devDependencies": {        
+        "phantomcss": "~0.10.0",
+        "casperjs": "~1.1.0",
+        "phantomjs" : "~1.9.7"
+      }
+}
