@@ -5,8 +5,21 @@ var require = patchRequire(require),
     phantomcss = require( basePath + "/node_modules/phantomcss/phantomcss" ); // casper magix
 // if anyone knows how to fix this for casperjs, feel free to remove the hard coded lib path
 
+function getChangedFiles( callback ) {
+    var spawn = require("child_process").spawn,
+        execFile = require("child_process").execFile,
+        child = spawn("git", ["log", "-1"]);
 
-function screenshotAndCompareFn( relativePath ) {
+    console.log("waiting for data on: git log -1");
+    child.stdout.on("data", function( data ) {
+        console.log("logged -------------- begin");
+        console.log(data);
+        console.log("logged -------------- end");
+        callback();
+    });
+}
+
+function screenshotAndCompare( relativePath ) {
 
     casper.test.begin( "Testing" + relativePath, function() {
 
@@ -48,6 +61,7 @@ function screenshotAndCompareFn( relativePath ) {
 
 
 function testRecursive( path ) {
+    path = path || "";
     var fileList = fs.list( testPath + path ),
         targetFile,
         targetPath,
@@ -63,11 +77,12 @@ function testRecursive( path ) {
                 testRecursive( targetPath + "/" );
             } else {
                 console.log( "Queued:", targetPath);
-                screenshotAndCompareFn( targetPath );
+                screenshotAndCompare( targetPath );
             }
         }
     }
 }
 
-testRecursive( "" );
+getChangedFiles( testRecursive );
+
 
