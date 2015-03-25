@@ -84,12 +84,13 @@ function addToChangedFilesList( fileName ) {
     }
 }
 
-function runEmptyCasperTest() {
-    casper.test.begin("Empty test that exists so that the build doesn't fail if no files are compared", function() {
+// Empty test that exists so that the build doesn't fail if no files are compared
+function runEmptyCasperTestHack() {
+    casper.test.begin("empty test", function() {
         casper.start().then( function() {
             casper.test.assert(true,true);
         }).run( function() {
-            test.done();
+            casper.test.done();
         });
     });
 }
@@ -101,11 +102,11 @@ var spawn = require("child_process").spawn,
 
 child.stdout.on("data", function( data ) {
 
-    data.match( /\*[^\*]*\*/g ).map( addToChangedFilesList );
+    (data.match( /\*[^\*]*\*/g ) || []).map( addToChangedFilesList );
     console.log("Files marked to have screenshots updated:", changedFiles);
 
     testRecursive("");
-    runEmptyCasperTest();
+    runEmptyCasperTestHack();
 });
 
 
