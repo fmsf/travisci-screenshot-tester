@@ -4,6 +4,7 @@ var require = patchRequire(require),
     fs = require( "fs" ),    
     basePath = fs.absolute( fs.workingDirectory ),
     testPath = basePath + "/test/html/",
+    screenshotsPath = basePath + "/screenshots",
     phantomcss = require( basePath + "/node_modules/phantomcss/phantomcss" ); // casper magix
 // if anyone knows how to fix this for casperjs, feel free to remove the hard coded lib path
 
@@ -80,8 +81,20 @@ function testRecursive( path ) {
 
 function addToChangedFilesList( fileName ) {
     if ( fileName.length > 2 ) {
-        ignored[(fileName.substring(1, fileName.length - 1))] = true;
+        changedFiles.push(fileName.substring(1, fileName.length - 1));
     }
+    
+}
+
+function deleteScreenShot( filename ) {
+    var target = screenshotsPath + "/" + filename ;
+
+    console.log("deleting original screenshot for:", target);
+    try {
+        require("fs").remove(target + "_0.png");
+        require("fs").remove(target + "_0.diff.png");        
+    } catch (e) {}
+    
 }
 
 // Empty test that exists so that the build doesn't fail if no files are compared
@@ -96,14 +109,16 @@ function runEmptyCasperTestHack() {
 }
 
 
+
 var spawn = require("child_process").spawn,
     execFile = require("child_process").execFile,
     child = spawn("git", ["log", "-1"]);
 
 child.stdout.on("data", function( data ) {
 
-    (data.match( /\*[^\*]*\*/g ) || []).map( addToChangedFilesList );
-    console.log("Files marked to have screenshots updated:", changedFiles);
+    (data.match( /\*[^\*]*\*/g ) || []).map( addToChangedFilesList );    
+    changedFiles.map( deleteScreenShot );
+    
 
     testRecursive("");
     runEmptyCasperTestHack();
